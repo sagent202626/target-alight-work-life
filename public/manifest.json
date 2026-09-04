@@ -1,0 +1,31 @@
+{
+  "name": "Target Pay and Benefit Alight Worklife",
+  "short_name": "Target",
+  "description": "Access Target Pay and Benefit Alight Worklife at targetandpaymentbenefits.com — view pay, enroll in benefits, and open your team member HR tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0099D8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

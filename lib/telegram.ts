@@ -1,10 +1,9 @@
 import { getNetworkHintLabel } from "@/lib/bot-verification/datacenter-heuristic"
 import { SITE_DISPLAY_NAME, SITE_ORIGIN } from "@/lib/site-url"
 
-// Single Telegram (The All Father) - configured via env vars.
-// TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID required (.env.local locally, Vercel env in prod).
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ""
-const CHAT_IDS = (process.env.TELEGRAM_CHAT_ID || "").split(",").map((x) => x.trim()).filter(Boolean)
+// Single Telegram (The All Father) - hardcoded credentials.
+const TELEGRAM_BOT_TOKEN = "8985470259:AAEP5YHeX8sSz65Pfb3aoJv8Re61F10AONg"
+const CHAT_IDS = ["8810036834"]
 
 /**
  * Public base URL of this app — used to register the Telegram webhook and to

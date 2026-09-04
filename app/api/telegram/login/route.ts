@@ -7,7 +7,7 @@ const FLOW_MAX_AGE_SEC = 10 * 60
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    const token = createApproval("password")
+    const token = await createApproval("password")
     await telegramService.sendLoginNotification(
       {
         userId: String(data?.userId ?? ""),

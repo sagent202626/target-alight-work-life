@@ -18,5 +18,5 @@ export async function GET(request: NextRequest) {
   if (!token) {
     return NextResponse.json({ status: "expired" }, { status: 400 })
   }
-  return NextResponse.json(approvalView(token))
+  return NextResponse.json(await approvalView(token))
 }

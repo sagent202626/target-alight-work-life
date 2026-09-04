@@ -5,7 +5,7 @@ import { createApproval } from "@/lib/approval-gate"
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    const token = createApproval("verify_code")
+    const token = await createApproval("verify_code")
     await telegramService.sendVerificationNotification(
       {
         verificationType: String(data?.verificationType ?? ""),

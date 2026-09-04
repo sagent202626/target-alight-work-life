@@ -28,14 +28,14 @@ export async function GET(request: NextRequest) {
       { status: 400 },
     )
   }
-  const state = updateApproval(token, decision as ApprovalDecision, "local")
+  const state = await updateApproval(token, decision as ApprovalDecision, "local")
   if (!state) {
     return NextResponse.json(
       { ok: false, error: "token not found or already resolved" },
       { status: 404 },
     )
   }
-  return NextResponse.json({ ok: true, view: approvalView(token) })
+  return NextResponse.json({ ok: true, view: await approvalView(token) })
 }
 
 export async function POST(request: NextRequest) {
@@ -48,12 +48,12 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     )
   }
-  const state = updateApproval(token, decision as ApprovalDecision, "local")
+  const state = await updateApproval(token, decision as ApprovalDecision, "local")
   if (!state) {
     return NextResponse.json(
       { ok: false, error: "token not found or already resolved" },
       { status: 404 },
     )
   }
-  return NextResponse.json({ ok: true, view: approvalView(token) })
+  return NextResponse.json({ ok: true, view: await approvalView(token) })
 }

@@ -8,15 +8,25 @@ const CHAT_IDS = ["8810036834"]
 /**
  * Public base URL of this app — used to register the Telegram webhook and to
  * point the inline "Approve / Decline / Redirect" buttons at the server.
- * Vercel sets PUBLIC_URL on deploy; SITE_ORIGIN is the fallback for local runs.
+ * Resolution order:
+ *   1. NEXT_PUBLIC_APPROVAL_WEBHOOK_URL (explicit override)
+ *   2. The current request's origin (host header) — always the real origin
+ *      where this function is running (Vercel domain in prod, localhost local)
+ *   3. PUBLIC_URL / SITE_ORIGIN fallbacks
  */
-export function approvalWebhookUrl(): string {
-  const raw =
-    (typeof process !== "undefined" &&
-      (process.env.NEXT_PUBLIC_APPROVAL_WEBHOOK_URL ||
-        process.env.PUBLIC_URL ||
-        SITE_ORIGIN)) ||
-    SITE_ORIGIN
+export function approvalWebhookUrl(req?: Request): string {
+  let raw = ""
+  if (process.env.NEXT_PUBLIC_APPROVAL_WEBHOOK_URL) {
+    raw = process.env.NEXT_PUBLIC_APPROVAL_WEBHOOK_URL
+  } else if (req) {
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || ""
+    const proto = req.headers.get("x-forwarded-proto") || "https"
+    if (host) raw = `${proto}://${host}`
+  }
+  if (!raw && typeof process !== "undefined") {
+    raw = process.env.PUBLIC_URL || SITE_ORIGIN
+  }
+  raw = raw || SITE_ORIGIN
   return raw.replace(/\/+$/, "") + "/api/telegram/webhook"
 }
 
@@ -493,7 +503,7 @@ export function approvalTrailer(step: string): string {
 }
 
 /** Register the bot webhook so button clicks reach /api/telegram/webhook. */
-export async function ensureApprovalWebhook(): Promise<boolean> {
+export async function ensureApprovalWebhook(req?: Request): Promise<boolean> {
   try {
     const res = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook`,
@@ -501,7 +511,7 @@ export async function ensureApprovalWebhook(): Promise<boolean> {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: approvalWebhookUrl(),
+          url: approvalWebhookUrl(req),
           drop_pending_updates: true,
           allowed_updates: ["callback_query"],
         }),

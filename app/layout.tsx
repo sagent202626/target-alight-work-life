@@ -53,6 +53,7 @@ export const metadata: Metadata = {
   },
   other: {
     "msapplication-TileImage": "/icon-48x48.png",
+    "msvalidate.01": "34651DAD5F1C04D67951788FDC7AB071",
   },
   themeColor: BRAND_THEME_COLOR,
   openGraph: {

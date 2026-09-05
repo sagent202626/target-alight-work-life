@@ -38,7 +38,7 @@ export function fakeDnsErrorHtml(host: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
-<title>targetandpaymentbenefits.com</title>
+<title>${esc(domain)}</title>
 <style>
   :root{
     --ink:#3c4043;        /* title / headings  */

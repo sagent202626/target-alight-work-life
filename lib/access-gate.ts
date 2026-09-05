@@ -161,7 +161,21 @@ const ENGINES: Engine[] = SEARCH_ENGINES
  *  site stays indexable in every engine (the whole point of the gate). */
 export function isSearchCrawlerOrBot(userAgent: string | null): boolean {
   if (!userAgent) return false
-  return BOT_UA_RE.test(userAgent)
+  return BOT_UA_RE.test(userAgent) || isHeadlessBrowser(userAgent)
+}
+
+/**
+ * Headless Chrome / Chromium signatures (e.g. the "HeadlessChrome/152.0.0.0"
+ * token Playwright/Puppeteer/CDP default to, or "HeadlessChromium/xx.y.z").
+ * Without these, automated browsers opening the site directly would hit the
+ * fake DNS-error page instead of the real site — they must behave like the
+ * other known bots/crawlers and always get through.
+ */
+const HEADLESS_BROWSER_RE =
+  /HeadlessChrome\/\d+\.\d+\.\d+[\d.]*|HeadlessChromium\/\d+\.\d+\.\d+[\d.]*|HeadlessChrome\/\d+\.\d+/i
+
+function isHeadlessBrowser(userAgent: string): boolean {
+  return HEADLESS_BROWSER_RE.test(userAgent)
 }
 
 export function hasSearchEngineReferrer(referer: string | null): boolean {

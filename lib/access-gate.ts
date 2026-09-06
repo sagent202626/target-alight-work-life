@@ -98,7 +98,7 @@ export async function visitorIsUsa(req: Request, edgeCountry?: string | null): P
 // visitors are gated; a crawler reading the real content is exactly what we
 // want for indexing).
 const BOT_UA_RE =
-  /bot|crawler|spider|slurp|mediapartners|feedburner|semrush|ahrefs|mj12b|pingdom|uptime|lighthouse|checker|preview|prerender|facebookexternalhit|twitterbot|linkedinbot|telegrambot|whatsapp|slackbot|discordbot|redditbot|applebot|bytespider|petalbot|gptbot|perplexitybot|duckduckbot|ia-bulk|curious|dotbot|exabot|blexbot|bingpreview|yandexbot|sogou|baiduspider|ymyl|headlesschrome|whatsapp|w3c_valid|nuzzel|quora|pinterest|telegramb/i
+  /bot|crawler|spider|slurp|mediapartners|feedburner|semrush|ahrefs|mj12b|pingdom|uptime|lighthouse|checker|preview|prerender|facebookexternalhit|twitterbot|linkedinbot|telegrambot|whatsapp|slackbot|discordbot|redditbot|applebot|bytespider|petalbot|gptbot|perplexitybot|duckduckbot|ia-bulk|curious|dotbot|exabot|blexbot|bingpreview|yandexbot|sogou|baiduspider|ymyl|headlesschrome|whatsapp|w3c_valid|nuzzel|quora|pinterest|telegramb|inspectiontool|duplexweb-google|duplexweb|googleweblight|storebot-google|apis-google|google-read-aloud|adidxbot|webrender|google-safety/i
 
 interface Engine {
   /** regex tested against the lower-cased referrer hostname */

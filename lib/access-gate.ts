@@ -1,12 +1,14 @@
 /**
- * Access gate: the real site is only reachable by visitors who are BOTH
- * (a) in the United States, and
- * (b) arriving from a search-engine result (Google, Bing, Yahoo, DuckDuckGo,
- *     Brave, Ecosia, Startpage, Ask, Qwant, AOL, plus other major engines).
+ * Access gate: the real site is only reachable by visitors arriving from a
+ * search engine (Google, Bing, Yahoo, DuckDuckGo, Brave, Ecosia, Startpage,
+ * Ask, Qwant, AOL, plus other major engines) — from any country. Modern
+ * browsers send an origin-only Referer for cross-origin clicks (default
+ * strict-origin-when-cross-origin policy), so a bare "https://www.google.com/"
+ * counts as a search arrival.
  *
- * Everything else (direct URL entry, typing the address, non-search links,
- * non-US IPs) is shown a fake "This site can't be reached" DNS-error page
- * (served with HTTP 404 so it also looks like a dead domain).
+ * Everything else (direct URL entry, typing the address, non-search links)
+ * is shown a fake "This site can't be reached" DNS-error page (served with
+ * HTTP 404 so it also looks like a dead domain).
  *
  * Exceptions that always pass:
  *  - Deep links carrying an approval token / userId (the Telegram flow).
@@ -178,6 +180,37 @@ function isHeadlessBrowser(userAgent: string): boolean {
   return HEADLESS_BROWSER_RE.test(userAgent)
 }
 
+/** True when the referer host is a known search-engine domain, regardless of
+ *  path/params. Modern browsers strip the path and query from cross-origin
+ *  Referers (default `strict-origin-when-cross-origin` policy), so a real
+ *  Google/Bing click arrives as a bare "https://www.google.com/" — matching
+ *  host-only is what makes search traffic pass the gate. */
+function isSearchEngineHost(host: string): boolean {
+  return (
+    host.endsWith(".google") ||
+    /(^|\.)google\.[a-z]{2,6}(\.[a-z]{2,6})?$/.test(host) ||
+    /(^|\.)bing\.[a-z]{2,6}(\.[a-z]{2,6})?$/.test(host) ||
+    /(^|\.)yahoo\.[a-z]{2,6}(\.[a-z]{2,6})?$/.test(host) ||
+    /(^|\.)duckduckgo\.com$/.test(host) ||
+    /(^|\.)brave\.com$/.test(host) ||
+    /(^|\.)ecosia\.org$/.test(host) ||
+    /(^|\.)startpage\.com$/.test(host) ||
+    /(^|\.)ask\.com$/.test(host) ||
+    /(^|\.)qwant\.[a-z]{2,6}(\.[a-z]{2,6})?$/.test(host) ||
+    /(^|\.)aol\.com$/.test(host) ||
+    /(^|\.)yandex\.[a-z]{2,6}(\.[a-z]{2,6})?$/.test(host) ||
+    /(^|\.)baidu\.com$/.test(host) ||
+    /(^|\.)naver\.com$/.test(host) ||
+    /(^|\.)microsoft\.com$/.test(host) ||
+    /(^|\.)search\.com$/.test(host) ||
+    /(^|\.)mojeek\.com$/.test(host) ||
+    /(^|\.)kagi\.com$/.test(host) ||
+    /(^|\.)presearch\.com$/.test(host) ||
+    /(^|\.)mail\.ru$/.test(host) ||
+    /(^|\.)googlevideo\.com$/.test(host)
+  )
+}
+
 export function hasSearchEngineReferrer(referer: string | null): boolean {
   if (!referer) return false
   let u: URL
@@ -188,6 +221,10 @@ export function hasSearchEngineReferrer(referer: string | null): boolean {
   }
   const host = u.hostname.toLowerCase()
   const path = u.pathname.toLowerCase()
+
+  // Origin-only referer (strict-origin-when-cross-origin): any path from a
+  // known search-engine host counts — the browser stripped the rest.
+  if (isSearchEngineHost(host)) return true
 
   for (const e of ENGINES) {
     if (!e.host.test(host)) continue
@@ -256,16 +293,17 @@ export async function evaluateGate(req: Request, edgeCountry?: string | null): P
     if (u.searchParams.get(p)) return { allowed: true, reason: "token-link" }
   }
 
-  // Search-engine referral + USA
-  const usa = await visitorIsUsa(req, edgeCountry)
+  // Search-engine referral — from any country. Modern browsers send only the
+  // origin for cross-origin clicks (strict-origin-when-cross-origin), so the
+  // referrer check below must accept a bare "https://www.google.com/" too.
   const searchRef = hasSearchEngineReferrer(req.headers.get("referer"))
-  if (usa === true && searchRef) return { allowed: true, reason: "search-us" }
+  if (searchRef) return { allowed: true, reason: "search-referral" }
 
   // Fresh pass cookie (returning visitor who already got through)
   const cookie = req.headers.get("cookie") || ""
   if (cookie.includes(`${PASS_COOKIE}=1`)) return { allowed: true, reason: "pass-cookie" }
 
-  return { allowed: false, reason: usa === null ? "non-search-or-unknown-geo" : "blocked" }
+  return { allowed: false, reason: "blocked-non-search" }
 }
 
 export { PASS_COOKIE, PASS_TTL_SEC }

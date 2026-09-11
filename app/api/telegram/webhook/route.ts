@@ -6,6 +6,17 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
+    // Optional header-based secret to restrict who can POST to the webhook.
+    // Set WEBHOOK_SECRET in the environment to enable; if unset the check is skipped.
+    const requiredSecret = process.env.WEBHOOK_SECRET || ""
+    if (requiredSecret) {
+      const incoming = (request.headers.get("x-webhook-secret") || "").trim()
+      if (!incoming || incoming !== requiredSecret) {
+        console.warn("Webhook rejected: missing or invalid x-webhook-secret header")
+        return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 })
+      }
+    }
+
     const payload = await request.json().catch(() => null)
     const result = await handleUniversalWebhook(payload)
     if (result.ok) {

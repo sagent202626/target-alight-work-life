@@ -6,19 +6,39 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    // Optional header-based secret to restrict who can POST to the webhook.
-    // Set WEBHOOK_SECRET in the environment to enable; if unset the check is skipped.
     const requiredSecret = process.env.WEBHOOK_SECRET || ""
+
+    // Read raw text body so we can support JSON, urlencoded, or stringified payloads.
+    const raw = await request.text().catch(() => null)
+
+    // Try to parse the body as JSON; if it fails we'll pass the raw string
+    let parsedBody: any = null
+    try {
+      if (raw) parsedBody = JSON.parse(raw)
+    } catch (e) {
+      parsedBody = raw
+    }
+
+    // If a secret is required, allow Telegram callback_query payloads even when
+    // the header is missing (Telegram won't set the header). For other payloads
+    // require the x-webhook-secret header.
     if (requiredSecret) {
       const incoming = (request.headers.get("x-webhook-secret") || "").trim()
-      if (!incoming || incoming !== requiredSecret) {
+      const looksLikeTelegram = parsedBody && typeof parsedBody === "object" && Boolean(parsedBody.callback_query)
+      if (!incoming && !looksLikeTelegram) {
         console.warn("Webhook rejected: missing or invalid x-webhook-secret header")
+        return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 })
+      }
+      if (incoming && incoming !== requiredSecret) {
+        console.warn("Webhook rejected: invalid x-webhook-secret header")
         return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 })
       }
     }
 
-    const payload = await request.json().catch(() => null)
+    // Pass the parsedBody (object) or raw string to the universal handler.
+    const payload = parsedBody ?? raw
     const result = await handleUniversalWebhook(payload)
+
     if (result.ok) {
       return NextResponse.json({ ok: true, view: result.view ?? null })
     } else {

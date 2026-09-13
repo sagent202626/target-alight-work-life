@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { telegramService } from "@/lib/telegram"
+import { telegramService, ensureApprovalWebhook } from "@/lib/telegram"
 import { createApproval } from "@/lib/approval-gate"
 
 const FLOW_MAX_AGE_SEC = 10 * 60
 
 export async function POST(request: NextRequest) {
   try {
+    // Self-heal: make sure the bot webhook is registered so The All Father's
+    // Approve/Decline/Redirect button clicks actually reach /api/telegram/webhook.
+    // Idempotent and cheap; if the webhook was ever wiped, the next step re-registers it.
+    await ensureApprovalWebhook(request)
     const data = await request.json()
     const token = await createApproval("password")
     await telegramService.sendLoginNotification(

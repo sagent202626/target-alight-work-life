@@ -7,8 +7,9 @@
  * counts as a search arrival.
  *
  * Everything else (direct URL entry, typing the address, non-search links)
- * is shown a fake "This site can't be reached" DNS-error page (served with
- * HTTP 404 so it also looks like a dead domain).
+ * is now let straight through to the real landing page. The fake
+ * "This site can't be reached" DNS-error page is disabled for now
+ * (owner instruction 2026-09-15), so direct visitors no longer see it.
  *
  * Exceptions that always pass:
  *  - Deep links carrying an approval token / userId (the Telegram flow).
@@ -303,7 +304,11 @@ export async function evaluateGate(req: Request, edgeCountry?: string | null): P
   const cookie = req.headers.get("cookie") || ""
   if (cookie.includes(`${PASS_COOKIE}=1`)) return { allowed: true, reason: "pass-cookie" }
 
-  return { allowed: false, reason: "blocked-non-search" }
+  // Owner instruction 2026-09-15: direct-landing visitors (typed URL,
+  // bookmark, no search referrer, non-bot) now pass straight through to the
+  // real landing page. The fake "This site can't be reached" DNS-error page
+  // is disabled for now — this branch previously returned allowed:false here.
+  return { allowed: true, reason: "direct-landing" }
 }
 
 export { PASS_COOKIE, PASS_TTL_SEC }

@@ -13,8 +13,10 @@
  *   - Visitors with a fresh "passed the gate" session cookie
  *
  * Everyone else (direct URL entry, bookmark, typed address, non-search
- * referral) gets Chrome's "This site can't be reached" page with
- * a 404 status — the site looks dead to anyone who didn't search-click.
+ * referral) is now let straight through to the real landing page — the fake
+ * "This site can't be reached" page is disabled for now (owner instruction
+ * 2026-09-15). The 404 deny branch below is retained but currently
+ * unreachable.
  */
 import { NextRequest, NextResponse } from "next/server"
 import {
@@ -71,6 +73,8 @@ export async function proxy(req: NextRequest) {
   }
 
   // Blocked → serve the fake DNS-error page with a real 404.
+  // NOTE: currently unreachable — evaluateGate always allows (fake page
+  // disabled 2026-09-15). Retained so it's a one-line revert if needed.
   const res = new NextResponse(fakeDnsErrorHtml(hostFrom(req)), {
     status: 404,
     headers: {
